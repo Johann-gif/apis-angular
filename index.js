@@ -4,15 +4,63 @@ import axios from 'axios';
 
 const app = fastify({ logger: true });
 
-app.get('/', async (req, res) => {
-  return {
-    message: `Welcome to Node Babel with ${
-      req.body?.testValue ?? 'no testValue'
-    }`,
-  };
+app.post('/', async (req, res) => {
+  return getAll(req.body.countryCode);
 });
 
-// Run the server!
+const getCat = () => {
+  return new Promise((resolve) => {
+    axios
+      .get(
+        'https://cat-fact.herokuapp.com/facts/random?animal_type=cat&amount=3',
+      )
+      .then((res) => {
+        let facts = [];
+        let i = 0;
+        while (i < res.data.length) {
+          facts.push(res.data[i].text);
+          i++;
+        }
+        resolve(facts);
+      })
+      .catch((fail) => resolve(null));
+  });
+};
+
+const getFox = () => {
+  return new Promise((resolve) => {
+    axios
+      .get('https://randomfox.ca/floof/')
+      .then((res) => {
+        resolve(res.data.image);
+      })
+      .catch((fail) => resolve(null));
+  });
+};
+
+const getCountry = (countryCode) => {
+  return new Promise((resolve) => {
+    axios
+      .get('https://date.nager.at/api/v2/publicholidays/2021/' + countryCode)
+      .then((res) => {
+        resolve(res.data);
+      })
+      .catch((fail) => resolve(null));
+  });
+};
+
+const getAll = (countryCode) => {
+  return Promise.all([getCat(), getFox(), getCountry(countryCode)]).then(
+    (res) => {
+      let data = {};
+      data['foxPicture'] = res[1];
+      data['catFacts'] = res[0];
+      data['holidays'] = res[2];
+      return data;
+    },
+  );
+};
+
 const start = async () => {
   try {
     await app.listen(5000);
